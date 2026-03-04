@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Quiet Room — Writing & Thoughts</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a18;
+    --paper: #f5f0e8;
+    --paper-warm: #ede7db;
+    --accent: #b44a2d;
+    --accent-soft: #d4856e;
+    --muted: #8a8478;
+    --rule: #c8bfb0;
+    --shadow: rgba(26, 26, 24, 0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Source Serif 4', Georgia, serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.7;
+    font-weight: 300;
+    overflow-x: hidden;
+  }
+
+  /* --- GRAIN OVERLAY --- */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* --- SCROLL PROGRESS BAR --- */
+  .scroll-progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: var(--accent);
+    z-index: 1000;
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+
+  /* --- NAVIGATION --- */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    padding: 1.2rem 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+    background: transparent;
+    transition: background 0.4s ease, box-shadow 0.4s ease;
+  }
+
+  nav.scrolled {
+    background: rgba(245, 240, 232, 0.92);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 1px 0 var(--rule);
+  }
+
+  .nav-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .nav-logo span { color: var(--accent); }
+
+  .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+
+  .nav-links a {
+    text-decoration: none;
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: color 0.3s;
+    position: relative;
+  }
+
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -4px; left: 0;
+    width: 0; height: 1.5px;
+    background: var(--accent);
+    transition: width 0.3s ease;
+  }
+
+  .nav-links a:hover { color: var(--ink); }
+  .nav-links a:hover::after { width: 100%; }
+
+  /* --- HERO --- */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 3rem;
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .hero-overline {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 300;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.3s forwards;
+  }
+
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3rem, 7vw, 5.5rem);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 2rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.5s forwards;
+  }
+
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .hero-subtitle {
+    font-size: 1.15rem;
+    color: var(--muted);
+    max-width: 520px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.7s forwards;
+  }
+
+  .hero-scroll-hint {
+    position: absolute;
+    bottom: 3rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 1s forwards;
+  }
+
+  .scroll-line {
+    width: 1px;
+    height: 40px;
+    background: var(--rule);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .scroll-line::after {
+    content: '';
+    position: absolute;
+    top: -40px; left: 0;
+    width: 1px; height: 40px;
+    background: var(--accent);
+    animation: scrollDown 2s ease infinite;
+  }
+
+  @keyframes scrollDown {
+    0% { top: -40px; }
+    100% { top: 40px; }
+  }
+
+  /* --- SECTIONS --- */
+  section {
+    padding: 6rem 3rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    font-weight: 400;
+    margin-bottom: 2rem;
+    letter-spacing: -0.02em;
+  }
+
+  /* --- BLOG POSTS GRID --- */
+  .posts-grid {
+    display: grid;
+    gap: 2rem;
+    margin-top: 3rem;
+  }
+
+  .post-card {
+    background: rgba(255, 255, 255, 0.45);
+    border: 1px solid var(--rule);
+    padding: 2.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  .post-card.visible {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.6s ease, transform 0.6s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+  }
+
+  .post-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px var(--shadow);
+    border-color: var(--accent-soft);
+  }
+
+  .post-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 0;
+    background: var(--accent);
+    transition: height 0.4s ease;
+  }
+
+  .post-card:hover::before { height: 100%; }
+
+  .post-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .post-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(180, 74, 45, 0.08);
+    padding: 0.25rem 0.6rem;
+  }
+
+  .post-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .post-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 400;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.01em;
+    transition: color 0.3s;
+  }
+
+  .post-card:hover h3 { color: var(--accent); }
+
+  .post-excerpt {
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.8;
+  }
+
+  .post-read-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.2rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    text-decoration: none;
+    transition: gap 0.3s;
+  }
+
+  .post-card:hover .post-read-more { gap: 0.8rem; }
+
+  /* --- FEATURED / SHORT STORY --- */
+  .featured {
+    background: var(--ink);
+    color: var(--paper);
+    margin: 4rem 0;
+    padding: 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .featured::after {
+    content: '"';
+    position: absolute;
+    top: -2rem; right: 2rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 20rem;
+    color: rgba(245, 240, 232, 0.04);
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .featured .post-tag {
+    background: rgba(180, 74, 45, 0.25);
+    color: var(--accent-soft);
+  }
+
+  .featured h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 400;
+    font-style: italic;
+    margin: 1rem 0;
+    color: var(--paper);
+  }
+
+  .featured .post-excerpt {
+    color: rgba(245, 240, 232, 0.6);
+    max-width: 600px;
+  }
+
+  .featured .post-read-more { color: var(--accent-soft); }
+
+  /* --- ABOUT SECTION --- */
+  #about .about-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    margin-top: 2rem;
+  }
+
+  .about-text p {
+    margin-bottom: 1.2rem;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  .about-details {
+    border-left: 1px solid var(--rule);
+    padding-left: 2rem;
+  }
+
+  .about-detail-item {
+    margin-bottom: 1.5rem;
+  }
+
+  .about-detail-item h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.3rem;
+  }
+
+  .about-detail-item p {
+    font-size: 0.95rem;
+    color: var(--ink);
+  }
+
+  /* --- TOPICS STRIP --- */
+  .topics-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 2rem;
+  }
+
+  .topic-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.5rem 1.2rem;
+    border: 1px solid var(--rule);
+    color: var(--muted);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .topic-pill:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(180, 74, 45, 0.05);
+  }
+
+  /* --- FOOTER --- */
+  footer {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 4rem 3rem;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-left {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 1.5rem;
+    list-style: none;
+  }
+
+  .footer-links a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    transition: color 0.3s;
+  }
+
+  .footer-links a:hover { color: var(--accent); }
+
+  /* --- ANIMATIONS --- */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* --- DIVIDER --- */
+  .ornament {
+    text-align: center;
+    margin: 4rem 0;
+    color: var(--rule);
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.5em;
+    user-select: none;
+  }
+
+  /* --- POST EXPAND (DETAIL VIEW) --- */
+  .post-full {
+    display: none;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .post-full.open { display: block; }
+
+  .post-full p {
+    margin-bottom: 1rem;
+    color: var(--ink);
+    font-size: 0.95rem;
+    line-height: 1.85;
+  }
+
+  .post-full p:first-child::first-letter {
+    font-family: 'Playfair Display', serif;
+    font-size: 3.2rem;
+    float: left;
+    line-height: 1;
+    margin-right: 0.5rem;
+    margin-top: 0.1rem;
+    color: var(--accent);
+  }
+
+  /* --- MOBILE NAV --- */
+  .nav-toggle {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+  }
+
+  .nav-toggle span {
+    display: block;
+    width: 22px;
+    height: 1.5px;
+    background: var(--ink);
+    margin: 5px 0;
+    transition: all 0.3s ease;
+  }
+
+  /* --- RESPONSIVE --- */
+  @media (max-width: 768px) {
+    nav { padding: 1rem 1.5rem; }
+
+    .nav-toggle { display: block; }
+
+    .nav-links {
+      display: none;
+      position: absolute;
+      top: 100%; left: 0; right: 0;
+      background: rgba(245, 240, 232, 0.97);
+      backdrop-filter: blur(12px);
+      flex-direction: column;
+      padding: 1.5rem;
+      gap: 1rem;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .nav-links.open { display: flex; }
+
+    .hero, section, footer { padding-left: 1.5rem; padding-right: 1.5rem; }
+
+    .hero h1 { font-size: 2.8rem; }
+
+    #about .about-content {
+      grid-template-columns: 1fr;
+    }
+
+    .about-details {
+      border-left: none;
+      border-top: 1px solid var(--rule);
+      padding-left: 0;
+      padding-top: 2rem;
+    }
+
+    .featured { margin: 2rem 0; padding: 2.5rem 1.5rem; }
+
+    footer { flex-direction: column; gap: 1rem; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- NAVIGATION -->
+<nav id="navbar">
+  <a href="#" class="nav-logo">the quiet<span>.</span>room</a>
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#writing">Writing</a></li>
+    <li><a href="#stories">Stories</a></li>
+    <li><a href="#topics">Topics</a></li>
+    <li><a href="#about">About</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-overline">Personal writing &amp; short fiction</div>
+  <h1>Words left<br>in the <em>margins</em></h1>
+  <p class="hero-subtitle">A quiet corner for essays, short stories, and the kind of thoughts that need room to breathe.</p>
+  <div class="hero-scroll-hint">
+    <div class="scroll-line"></div>
+    scroll
+  </div>
+</header>
+
+<!-- WRITING / BLOG POSTS -->
+<section id="writing">
+  <div class="section-label fade-in">Recent writing</div>
+  <h2 class="section-title fade-in">Notebook</h2>
+
+  <div class="posts-grid">
+
+    <article class="post-card" onclick="togglePost(this)">
+      <div class="post-meta">
+        <span class="post-tag">Essay</span>
+        <span class="post-date">Feb 18, 2026</span>
+      </div>
+      <h3>On the Luxury of Doing Nothing</h3>
+      <p class="post-excerpt">There's a particular kind of guilt that arrives the moment you sit down without a purpose. Not rest after labor — that's permitted. I mean the deliberate act of choosing emptiness.</p>
+      <span class="post-read-more">Continue reading →</span>
+      <div class="post-full">
+        <p>There's a particular kind of guilt that arrives the moment you sit down without a purpose. Not rest after labor — that's permitted, even celebrated. I mean the deliberate act of choosing emptiness. Sitting in a chair with no phone, no book, no plan, and letting the minutes become unaccountable.</p>
+        <p>We've built a culture that treats stillness as a symptom. If you're not producing, you're decaying. If you're not optimizing your rest, you're wasting it. Even meditation has been repackaged as productivity software for the brain — ten minutes of stillness so you can return to the grind sharper, faster, more focused.</p>
+        <p>But what if doing nothing isn't a tool? What if it's the point? The Italians have a phrase for it: <em>il dolce far niente</em> — the sweetness of doing nothing. Not laziness. Sweetness. As if emptiness were a flavor you could taste, if only you stopped chewing long enough.</p>
+        <p>I've been practicing. It's harder than it sounds.</p>
+      </div>
+    </article>
+
+    <article class="post-card" onclick="togglePost(this)">
+      <div class="post-meta">
+        <span class="post-tag">Thought</span>
+        <span class="post-date">Feb 3, 2026</span>
+      </div>
+      <h3>Why I Stopped Reading the News at Breakfast</h3>
+      <p class="post-excerpt">The morning is a threshold. What you carry across it sets the weight for the entire day. I decided to stop letting strangers choose what I carry.</p>
+      <span class="post-read-more">Continue reading →</span>
+      <div class="post-full">
+        <p>The morning is a threshold. What you carry across it sets the weight for the entire day. I decided to stop letting strangers choose what I carry.</p>
+        <p>For years my routine was the same: coffee, phone, scroll. A catastrophe in one tab, an opinion in another, a statistic designed to make me feel something before I'd even brushed my teeth. By 7:30 AM I'd already inherited the emotional residue of events I couldn't influence, in places I'd never been, involving people I'd never meet.</p>
+        <p>Now I read fiction at breakfast. Or I read nothing at all. The world, it turns out, does not require my attention at 7 AM to continue functioning. The crises will still be there at noon. But by then, I'll have had a few hours that belonged entirely to me.</p>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<div class="ornament">· · ·</div>
+
+<!-- FEATURED STORY -->
+<section id="stories">
+  <div class="section-label fade-in">Short fiction</div>
+  <h2 class="section-title fade-in">Stories</h2>
+
+  <article class="featured post-card" onclick="togglePost(this)">
+    <div class="post-meta">
+      <span class="post-tag">Short Story</span>
+      <span class="post-date">Jan 22, 2026</span>
+    </div>
+    <h3>The Cartographer of Unnamed Places</h3>
+    <p class="post-excerpt">She made maps of places that didn't exist on any other map — the alley behind the pharmacy where the light hits different on Tuesdays, the exact spot on the bridge where you can hear the river thinking.</p>
+    <span class="post-read-more">Read the story →</span>
+    <div class="post-full">
+      <p>She made maps of places that didn't exist on any other map. Not imaginary places — real ones. Just the kind that nobody else thought worth naming.</p>
+      <p>The alley behind the pharmacy where the light hits different on Tuesdays. The exact spot on the bridge where, if you close your eyes, you can hear the river thinking. The bench in the park that smells like pine in winter and someone's laundry in June.</p>
+      <p>Her apartment was wallpapered in hand-drawn charts, each one a record of some small, overlooked geography. She used colored pencils — red for places that made you feel something without knowing why, blue for places that changed depending on who you were with, green for places that only existed at certain times of day.</p>
+      <p>"You can't map a feeling," her sister told her once, not unkindly.</p>
+      <p>"You can't map the ocean floor either," she replied, "until someone decides it matters enough to try."</p>
+      <p>She died on a Wednesday in March, and they found three hundred and twelve maps in her apartment. Her sister kept them all. Sometimes, on quiet afternoons, she'd pick one at random and walk to wherever it led.</p>
+      <p>She never found the same place twice. But she always found <em>something</em>.</p>
+    </div>
+  </article>
+
+  <div class="posts-grid" style="margin-top:2rem;">
+    <article class="post-card" onclick="togglePost(this)">
+      <div class="post-meta">
+        <span class="post-tag">Flash Fiction</span>
+        <span class="post-date">Dec 9, 2025</span>
+      </div>
+      <h3>Eleven Seconds</h3>
+      <p class="post-excerpt">That's how long the elevator takes between the lobby and the fourth floor. Long enough to decide whether to say something. Never long enough to figure out what.</p>
+      <span class="post-read-more">Read the story →</span>
+      <div class="post-full">
+        <p>That's how long the elevator takes between the lobby and the fourth floor. Eleven seconds. He'd timed it.</p>
+        <p>Long enough to decide whether to say something. Never long enough to figure out what. So every morning at 8:47, he stood next to her in a box made of brushed steel and silence, and he said nothing, and she said nothing, and the floors counted upward like a clock neither of them could stop.</p>
+        <p>On a Friday in November, she wasn't there. Or the Friday after that. Or any Friday since.</p>
+        <p>The elevator still takes eleven seconds. But now it feels like it takes no time at all.</p>
+      </div>
+    </article>
+  </div>
+</section>
+
+<div class="ornament">· · ·</div>
+
+<!-- TOPICS -->
+<section id="topics">
+  <div class="section-label fade-in">What I write about</div>
+  <h2 class="section-title fade-in">Topics</h2>
+  <div class="topics-strip fade-in">
+    <span class="topic-pill">Solitude</span>
+    <span class="topic-pill">Memory</span>
+    <span class="topic-pill">Cities</span>
+    <span class="topic-pill">Language</span>
+    <span class="topic-pill">Small Moments</span>
+    <span class="topic-pill">Walking</span>
+    <span class="topic-pill">Fiction</span>
+    <span class="topic-pill">Art &amp; Looking</span>
+    <span class="topic-pill">Time</span>
+    <span class="topic-pill">The Mundane</span>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="section-label fade-in">About</div>
+  <h2 class="section-title fade-in">The Writer</h2>
+  <div class="about-content fade-in">
+    <div class="about-text">
+      <p>This is a place for writing that doesn't fit anywhere else — too long for a caption, too personal for a publication, too strange for polite conversation.</p>
+      <p>I write short stories, essays, and occasional thoughts about the things I notice when I'm paying attention. Most of what I care about happens in the margins: the small, unremarkable moments that turn out to be the ones you remember.</p>
+      <p>Thanks for reading. If something resonates, I'm glad.</p>
+    </div>
+    <div class="about-details">
+      <div class="about-detail-item">
+        <h4>Based in</h4>
+        <p>Wherever the writing happens</p>
+      </div>
+      <div class="about-detail-item">
+        <h4>Currently reading</h4>
+        <p>Update this with your current read</p>
+      </div>
+      <div class="about-detail-item">
+        <h4>Contact</h4>
+        <p>your@email.com</p>
+      </div>
+      <div class="about-detail-item">
+        <h4>Elsewhere</h4>
+        <p>Twitter / Substack / Goodreads</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">© 2026 the quiet room</div>
+  <ul class="footer-links">
+    <li><a href="#">RSS</a></li>
+    <li><a href="#">Email</a></li>
+    <li><a href="#">Top ↑</a></li>
+  </ul>
+</footer>
+
+<script>
+  // --- Scroll progress bar ---
+  window.addEventListener('scroll', () => {
+    const scrollTop = document.documentElement.scrollTop;
+    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = (scrollTop / scrollHeight) * 100;
+    document.getElementById('scrollProgress').style.width = progress + '%';
+  });
+
+  // --- Nav background on scroll ---
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 60);
+  });
+
+  // --- Mobile nav toggle ---
+  document.getElementById('navToggle').addEventListener('click', () => {
+    document.getElementById('navLinks').classList.toggle('open');
+  });
+
+  // --- Scroll-triggered fade-ins ---
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.fade-in, .post-card').forEach(el => observer.observe(el));
+
+  // --- Expand/collapse posts ---
+  function togglePost(card) {
+    const full = card.querySelector('.post-full');
+    if (!full) return;
+    const isOpen = full.classList.contains('open');
+    // Close all others
+    document.querySelectorAll('.post-full.open').forEach(el => el.classList.remove('open'));
+    document.querySelectorAll('.post-card.expanded').forEach(el => el.classList.remove('expanded'));
+    if (!isOpen) {
+      full.classList.add('open');
+      card.classList.add('expanded');
+    }
+  }
+
+  // --- Stagger post card animations ---
+  document.querySelectorAll('.post-card').forEach((card, i) => {
+    card.style.transitionDelay = (i * 0.12) + 's';
+  });
+</script>
+
+</body>
+</html>
